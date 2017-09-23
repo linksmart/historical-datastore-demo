@@ -20,7 +20,7 @@ services:
       - ./docker/data:/data
 #      - ./conf:/conf
   dummy-stream:
-    image: fraunhoferfit/ls-hds-dummystream
+    image: docker.linksmart.eu/hds/dummy-streamer
     depends_on:
       - hds
     command: ["--server", "http://hds:8085"]
