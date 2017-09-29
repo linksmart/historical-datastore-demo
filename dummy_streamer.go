@@ -87,16 +87,6 @@ type Aggregation struct {
 	Retention string `json:"retention"`
 }
 
-//func post(endpoint string, contentType string, b []byte) *http.Response, err {
-//	resp, err := http.Post(endpoint, contentType, bytes.NewBuffer(b))
-//	if err != nil {
-//		log.Fatalf("Error: %s", err)
-//		return nil, err
-//	}
-//	log.Printf(resp.Status)
-//	return resp
-//}
-
 func main() {
 	hdsURLFlag := flag.String("server", "http://hds:8085", "URL of Historical Datastore service")
 	flag.Parse()
@@ -170,8 +160,7 @@ func main() {
 			}
 			jsonValue, _ := json.Marshal(Message{Entries: []Entry{senmlEntry}})
 			log.Println("Submitting", string(jsonValue))
-			//post(hdsURL+"/data/"+ds.ID, "application/senml+json", jsonValue)
-			_, err := http.Post(hdsURL+"/data/"+ds.ID, "application/json", bytes.NewBuffer(jsonValue))
+			_, err := http.Post(hdsURL+"/data/"+ds.ID, "application/senml+json", bytes.NewBuffer(jsonValue))
 			if err != nil {
 				log.Printf("Error: %s", err)
 			}
