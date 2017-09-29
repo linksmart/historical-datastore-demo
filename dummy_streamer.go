@@ -150,11 +150,12 @@ func main() {
 				ds.ID = strings.Split(location.Path, "/")[2]
 				break
 			} else {
-				fmt.Println("Something is wrong. Retrying...")
+				body, _ := ioutil.ReadAll(resp.Body)
+				fmt.Printf("%s: %s. Retrying...", resp.Status, string(body))
 				time.Sleep(1 * time.Second)
 			}
 		}
-		log.Println("ID:", ds.ID)
+		log.Println("Createds with ID:", ds.ID)
 		return ds
 	}
 
