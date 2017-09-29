@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -151,11 +150,11 @@ func main() {
 				break
 			} else {
 				body, _ := ioutil.ReadAll(resp.Body)
-				fmt.Printf("%s: %s. Retrying...", resp.Status, string(body))
+				log.Printf("%s: %s. Retrying...", resp.Status, string(body))
 				time.Sleep(1 * time.Second)
 			}
 		}
-		log.Println("Createds with ID:", ds.ID)
+		log.Println("Created datasource", ds.ID)
 		return ds
 	}
 
