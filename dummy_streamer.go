@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -87,20 +88,20 @@ type Aggregation struct {
 	Retention string `json:"retention"`
 }
 
-func post(endpoint string, contentType string, b []byte) *http.Response {
-	resp, err := http.Post(endpoint, contentType, bytes.NewBuffer(b))
-	if err != nil {
-		log.Fatalf("Error: %s", err)
-	}
-	log.Printf(resp.Status)
-	return resp
-}
+//func post(endpoint string, contentType string, b []byte) *http.Response, err {
+//	resp, err := http.Post(endpoint, contentType, bytes.NewBuffer(b))
+//	if err != nil {
+//		log.Fatalf("Error: %s", err)
+//		return nil, err
+//	}
+//	log.Printf(resp.Status)
+//	return resp
+//}
 
 func main() {
 	hdsURLFlag := flag.String("server", "http://hds:8085", "URL of Historical Datastore service")
 	flag.Parse()
 	log.Println("Started the Dummy Generator")
-	time.Sleep(time.Second * 1)
 
 	hdsURL := *hdsURLFlag
 	log.Println("HDS URL:", hdsURL)
@@ -125,22 +126,33 @@ func main() {
 			},
 		}
 		jsonValue, _ := json.Marshal(ds)
-		log.Println("Creating datasource named", name)
-		resp := post(hdsURL+"/registry", "application/json", jsonValue)
-		if resp.StatusCode == 409 {
-			log.Println("Looking for the existing datasource")
-			resp, err := http.Get(hdsURL + "/registry/one/resource/suffix/" + name)
+		for {
+			log.Println("Creating datasource named", name)
+			//resp := post(hdsURL+"/registry", "application/json", jsonValue)
+			resp, err := http.Post(hdsURL+"/registry", "application/json", bytes.NewBuffer(jsonValue))
 			if err != nil {
-				log.Fatalf("Error: %s", err)
+				log.Printf("Error: %s. Retrying...", err)
+				time.Sleep(1 * time.Second)
+			} else if resp.StatusCode == 409 {
+				log.Println("Looking for the existing datasource")
+				resp, err := http.Get(hdsURL + "/registry/one/resource/suffix/" + name)
+				if err != nil {
+					log.Fatalf("Error: %s", err)
+				}
+				body, _ := ioutil.ReadAll(resp.Body)
+				json.Unmarshal(body, &ds)
+				break
+			} else if resp.StatusCode == 201 {
+				location, err := resp.Location()
+				if err != nil {
+					log.Fatalln(err)
+				}
+				ds.ID = strings.Split(location.Path, "/")[2]
+				break
+			} else {
+				fmt.Println("Something is wrong. Retrying...")
+				time.Sleep(1 * time.Second)
 			}
-			body, _ := ioutil.ReadAll(resp.Body)
-			json.Unmarshal(body, &ds)
-		} else if resp.StatusCode == 201 {
-			location, err := resp.Location()
-			if err != nil {
-				log.Fatalln(err)
-			}
-			ds.ID = strings.Split(location.Path, "/")[2]
 		}
 		log.Println("ID:", ds.ID)
 		return ds
@@ -158,7 +170,11 @@ func main() {
 			}
 			jsonValue, _ := json.Marshal(Message{Entries: []Entry{senmlEntry}})
 			log.Println("Submitting", string(jsonValue))
-			post(hdsURL+"/data/"+ds.ID, "application/senml+json", jsonValue)
+			//post(hdsURL+"/data/"+ds.ID, "application/senml+json", jsonValue)
+			_, err := http.Post(hdsURL+"/data/"+ds.ID, "application/json", bytes.NewBuffer(jsonValue))
+			if err != nil {
+				log.Printf("Error: %s", err)
+			}
 		}
 	}
 
