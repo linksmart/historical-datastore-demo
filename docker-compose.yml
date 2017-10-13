@@ -20,7 +20,7 @@ services:
       - ./docker/data:/data
 #      - ./conf:/conf
   dummy-stream:
-    image: docker.linksmart.eu/hds/dummy-streamer
+    image: docker.linksmart.eu/hds/dummy-datasource
     depends_on:
       - hds
     command: ["--server", "http://hds:8085"]
